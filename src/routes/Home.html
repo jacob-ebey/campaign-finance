@@ -35,6 +35,7 @@
 								{#if result.first_name}{result.first_name} {/if}
 								{#if result.middle_name}{result.middle_name} {/if}
 								{#if result.last_name}{result.last_name} {/if}
+								| {result.chamber}
 							</p>
 							<div class="d-flex justify-content-between align-items-center">
 								<div class="btn-group">
@@ -74,7 +75,7 @@
 				const chunks = [];
 		    for (let i = 0, j = response.results[0].members.length; i < j; i += chunkSize) {
 		      chunks.push(response.results[0].members.slice(i, i + chunkSize));
-		    }
+				}
 
 		    this.set({ chunks });
 		  },
