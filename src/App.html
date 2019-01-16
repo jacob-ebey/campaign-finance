@@ -1,23 +1,17 @@
-<Header />
-
-{#if page === "home"}
-<Home />
-{:elseif page === "overview"}
-<Overview />
-{:elseif page === "finances"}
-<Finances />
-{:elseif page === "search"}
-<Search />
-{/if}
+<Header /> {#if page === "home"}
+<Home /> {:elseif page === "overview"}
+<Overview /> {:elseif page === "finances"}
+<Finances /> {:elseif page === "locate"}
+<Locate /> {/if}
 
 <script>
     export default {
-        components: {
-            Header: "./components/Header.html",
-            Home: "./routes/Home.html",
-            Overview: "./routes/Overview.html",
-            Finances: "./routes/Finances.html",
-            Search: "./routes/Search.html"
-        }
-    }
+      components: {
+        Header: "./components/Header.html",
+        Home: "./routes/Home.html",
+        Overview: "./routes/Overview.html",
+        Finances: "./routes/Finances.html",
+        Locate: "./routes/Locate.html"
+      }
+    };
 </script>

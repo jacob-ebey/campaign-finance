@@ -1,0 +1,29 @@
+<div ref:map />
+
+<script>
+  import FusionCharts from "fusioncharts/core";
+  import FusionMap from "fusioncharts/maps";
+  import FusionMapUSA from "fusioncharts/maps/es/fusioncharts.usa";
+
+  FusionCharts.addDep(FusionMap);
+  FusionCharts.addDep(FusionMapUSA);
+
+  export default {
+    oncreate() {
+      FusionCharts.ready(() => {
+        const chart = new FusionCharts({
+          type: "usa",
+          renderAt: this.refs.map,
+          width: "100%",
+          height: "100%",
+          dataFormat: "json",
+          events: {
+            entityClick: (event, args) => {
+              this.fire("select", args);
+            }
+          }
+        }).render();
+      });
+    }
+  };
+</script>

@@ -1,4 +1,5 @@
 import svelte from 'rollup-plugin-svelte';
+import json from 'rollup-plugin-json';
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import { terser } from 'rollup-plugin-terser';
@@ -28,6 +29,8 @@ export default {
 				css.write('public/bundle.css');
 			}
 		}),
+
+		json(),
 
 		scss({
 			output: "public/vendor.css"

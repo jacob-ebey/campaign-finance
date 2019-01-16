@@ -1,0 +1,173 @@
+<main role="main">
+
+	<section class="jumbotron text-center mb-0">
+		<div class="container">
+			<h1 class="jumbotron-heading">Locate Your Representatives</h1>
+		</div>
+	</section>
+
+	<div class="container">
+		<div class="row  mb-4">
+			<div class="col-12 map">
+				<Map on:select="onSelect(event)" />
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-12 mb-4" ref:loading>
+				{#if selectedState && loading}
+				<h2>Locating representatives in {selectedState.label}...</h2>
+				{:elseif selectedState && chunks}
+				<h2>Representatives for {selectedState.label}</h2>
+				{:else}
+				<h2>Select a state above to begin</h2>
+				{/if}
+			</div>
+		</div>
+	</div>
+
+	{#if chunks && chunks.length > 0} {#each chunks as chunk}
+	<div class="album py-4 bg-light">
+		<div class="container">
+			<div class="row">
+				{#each chunk as result}
+				<div class="col-lg-4">
+					<div class="card mb-4 shadow-sm">
+						<a class="bd-placeholder card-img-top mt-4" href={`overview?id=${result.id}`}>
+							<img class="bd-placeholder-image card-img-top" alt="" src={`https://theunitedstates.io/images/congress/225x275/${result.id}.jpg`}
+							/>
+						</a>
+						<div class="card-body">
+							<p class="card-text">{result.name} | {result.role}</p>
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="btn-group">
+									<a href={`overview?id=${result.id}`} class="btn btn-sm btn-outline-secondary">View Info</a>
+								</div>
+								<small class="text-muted">{result.party}</small>
+							</div>
+						</div>
+					</div>
+				</div>
+				{/each}
+			</div>
+		</div>
+	</div>
+	{/each}{:elseif loading}
+	<div class="text-center">
+		<Loader />
+		<LoadingMessage message={true} />
+	</div>
+	{/if}
+
+</main>
+
+<script>
+	import client from "../client";
+	import { getCycle, getUrlVars } from "../tools";
+
+	async function load(id) {
+	  const senatePromise = client(
+	    `https://api.propublica.org/congress/v1/members/senate/${id}/current.json`
+	  );
+	  const housePromise = client(
+	    `https://api.propublica.org/congress/v1/members/house/${id}/current.json`
+	  );
+
+	  await Promise.all([senatePromise, housePromise]);
+
+	  const members = (await senatePromise).results.concat(
+	    (await housePromise).results
+	  );
+
+	  const chunkSize = 3;
+	  const chunks = [];
+	  for (let i = 0, j = members.length; i < j; i += chunkSize) {
+	    chunks.push(members.slice(i, i + chunkSize));
+	  }
+
+	  return chunks;
+	}
+
+	export default {
+	  components: {
+	    Loader: "../components/Loader.html",
+	    LoadingMessage: "../components/LoadingMessage.html",
+	    Map: "../components/Map.html"
+	  },
+	  data() {
+	    const vars = getUrlVars();
+
+	    return {
+	      chunks: null,
+	      selectedState: vars.state && {
+	        originalId: vars.state,
+	        label: vars.state
+	      },
+	      loading: false
+	    };
+	  },
+	  async oncreate() {
+	    const { selectedState } = this.get();
+
+	    if (selectedState) {
+	      this.set({
+	        loading: true
+	      });
+	      this.refs.loading.scrollIntoView();
+
+				const chunks = await load(selectedState.originalId);
+
+	      this.set({
+	        chunks,
+	        loading: false
+	      });
+	    }
+	  },
+	  methods: {
+	    async onSelect(event) {
+	      if (event && event.originalId) {
+	        window.history.replaceState({}, null, `locate?state=${event.originalId}`);
+	        this.set({
+	          selectedState: event,
+	          loading: true
+	        });
+	        this.refs.loading.scrollIntoView();
+
+	        const chunks = await load(event.originalId);
+
+	        this.set({
+	          chunks,
+	          loading: false
+	        });
+	      }
+	    }
+	  }
+	};
+</script>
+
+<style>
+	.map {
+	  height: 80vh;
+	}
+
+	.bd-placeholder,
+	.bd-placeholder-image {
+	  position: relative;
+	  height: 225px;
+	  width: 275px;
+	  margin: 0 auto;
+	}
+
+	.bd-placeholder-image:before {
+	  content: " ";
+	  display: block;
+	  position: absolute;
+	  left: 0;
+	  height: 225px;
+	  width: 275px;
+	  background-color: white;
+	  background-image: url("https://www.bsn.eu/wp-content/uploads/2016/12/user-icon-image-placeholder-300-grey.jpg");
+	  background-position: center;
+	  background-repeat: no-repeat;
+	  background-size: contain;
+	}
+</style>

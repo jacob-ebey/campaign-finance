@@ -11,34 +11,9 @@
 				</svg>
 				<strong>Campaign Fincance</strong>
 			</a>
-			<form on:submit="submit(event)" class="form-inline">
-				<input bind:value="search" class="form-control mr-sm-2" type="text" placeholder="Search Representatives" aria-label="Search Representatives">
-				<button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-			</form>
+			<div class="navbar-nav">
+				<a href="locate" class="nav-item nav-link">Locate</a>
+			</div>
 		</div>
 	</div>
 </header>
-
-<script>
-	import { getUrlVars } from "../tools";
-
-	export default {
-		data() {
-			return {
-				search: getUrlVars().query || ""
-			};
-		},
-		methods: {
-			submit(e) {
-				e.preventDefault();
-				
-				const { search } = this.get();
-
-				const query = search.trim();
-				if (query) {
-					window.location.href = `search?query=${query}`;
-				}
-			}
-		}
-	}
-</script>
