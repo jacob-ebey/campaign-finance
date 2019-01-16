@@ -46,7 +46,7 @@
 					{#each overview.roles as role}
           {#if role.fec_candidate_id}
           <p>
-            <a href={`/finances?id=${role.fec_candidate_id}`}>{role.title} {role.congress} {role.chamber} ({role.party} - {role.state})</a>
+            <a href={`finances?id=${role.fec_candidate_id}`}>{role.title} {role.congress} {role.chamber} ({role.party} - {role.state})</a>
           </p>
           {:else}
 					<p>{role.title} {role.congress} {role.chamber} ({role.party} - {role.state})</p>

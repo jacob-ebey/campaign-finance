@@ -21,6 +21,7 @@
     "start": "sirv public",
     "start:dev": "sirv public --dev",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d public"
+    "deploy": "gh-pages -d public -b gh-pages",
+    "fix-deploy": "rm -rf node_modules/gh-pages/.cache"
   }
 }
