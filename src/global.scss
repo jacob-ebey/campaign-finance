@@ -1,0 +1,50 @@
+main {
+    position: relative;
+}
+
+.jumbotron {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    margin-bottom: 0;
+    background-color: #fff;
+}
+
+@media (min-width: 768px) {
+    .jumbotron {
+        padding-top: 6rem;
+        padding-bottom: 6rem;
+    }
+}
+
+.jumbotron p:last-child {
+    margin-bottom: 0;
+}
+
+.jumbotron-heading {
+    font-weight: 300;
+}
+
+.jumbotron .container {
+    max-width: 40rem;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.lead {
+    font-size: 1.25rem;
+    font-weight: 300;
+}
+
+.card {
+    position: relative;
+}
+
+.nowrap {
+    white-space: nowrap;
+}

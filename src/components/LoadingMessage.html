@@ -1,0 +1,37 @@
+{#if message && show}
+<div class="loading-message p-2 bg-dark">
+	<div class="container">
+		<div class="row">
+			<div class="row-12">
+				{#if message !== true}{message}{/if} If it takes too long, try reloading. We cache responses in your browser for 12 hours as the ProPublica API can be a bit slow at times.
+			</div>
+		</div>
+	</div>
+</div>
+{/if}
+
+<script>
+    export default {
+      data() {
+        return {
+          show: false
+        };
+      },
+      oncreate() {
+        setTimeout(() => {
+          this.set({ show: true });
+        }, 500);
+      }
+    };
+</script>
+
+<style>
+    .loading-message {
+      z-index: 100;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      color: white;
+    }
+</style>

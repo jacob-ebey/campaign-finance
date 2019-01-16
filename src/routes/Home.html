@@ -1,0 +1,110 @@
+<main role="main">
+
+	<section class="jumbotron text-center">
+		<div class="container">
+			<h1 class="jumbotron-heading">Campaign Finance</h1>
+			<p class="lead text-muted">
+				A simple way to get more involved in your local politics.
+			</p>
+			<!-- <p> -->
+			<!-- <a href="#" class="btn btn-primary my-2">Search Representativces</a> -->
+			<!-- <a href="#" class="btn btn-secondary my-2">Secondary action</a> -->
+			<!-- </p> -->
+		</div>
+	</section>
+
+	<div class="album py-5 bg-light">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<h2>New Members</h2>
+					<hr />
+				</div>
+			</div>
+			{#if chunks} {#each chunks as chunk}
+			<div class="row">
+				{#each chunk as result}
+				<div class="col-lg-4">
+					<div class="card mb-4 shadow-sm">
+						<a class="bd-placeholder card-img-top mt-4" href={`/overview?id=${result.id}`}>
+							<img class="bd-placeholder-image card-img-top" alt="" src={`https://theunitedstates.io/images/congress/225x275/${result.id}.jpg`}
+							/>
+						</a>
+						<div class="card-body">
+							<p class="card-text">
+								{#if result.first_name}{result.first_name} {/if}
+								{#if result.middle_name}{result.middle_name} {/if}
+								{#if result.last_name}{result.last_name} {/if}
+							</p>
+							<div class="d-flex justify-content-between align-items-center">
+								<div class="btn-group">
+									<a href={`/overview?id=${result.id}`} class="btn btn-sm btn-outline-secondary">View Info</a>
+								</div>
+								<small class="text-muted">{result.party}</small>
+							</div>
+						</div>
+					</div>
+				</div>
+				{/each}
+			</div>
+			{/each} {:else}
+			<div class="text-center">
+				<Loader />
+			</div>
+			{/if}
+		</div>
+	</div>
+
+</main>
+
+<script>
+		import client from "../client";
+		import { getCycle } from "../tools";
+
+		export default {
+		  components: {
+		    Loader: "../components/Loader.html"
+		  },
+		  async oncreate() {
+		    const response = await client(
+		      `https://api.propublica.org/congress/v1/members/new.json`
+		    );
+
+		    const chunkSize = 3;
+				const chunks = [];
+		    for (let i = 0, j = response.results[0].members.length; i < j; i += chunkSize) {
+		      chunks.push(response.results[0].members.slice(i, i + chunkSize));
+		    }
+
+		    this.set({ chunks });
+		  },
+		  data() {
+		    return {
+		      chunks: null
+		    };
+		  }
+		};
+</script>
+
+<style>
+	.bd-placeholder, .bd-placeholder-image {
+	  position: relative;
+	  height: 225px;
+	  width: 275px;
+	  margin: 0 auto;
+	}
+
+	.bd-placeholder-image:before {
+	  content: " ";
+	  display: block;
+	  position: absolute;
+	  left: 0;
+	  height: 225px;
+	  width: 275px;
+	  background-color: white;
+	  background-image: url("https://www.bsn.eu/wp-content/uploads/2016/12/user-icon-image-placeholder-300-grey.jpg");
+	  background-position: center;
+	  background-repeat: no-repeat;
+	  background-size: contain;
+	}
+</style>

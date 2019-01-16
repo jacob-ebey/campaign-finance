@@ -1,0 +1,201 @@
+<main role="main">
+
+	<LoadingMessage message={loadingMessage} />
+
+	<section class="jumbotron text-center">
+		<div class="container">
+			{#if !overview && !error}
+			<Loader /> {/if} {#if overview}
+			<h1 class="jumbotron-heading">{overview.name}</h1>
+			<h4 class="text-muted">
+				{#if overview.mailing_city} {overview.mailing_city}, {/if}{overview.mailing_state} | {overview.party}
+			</h4>
+			<p>
+				<span class="nowrap text-muted">Total: {formatter.format(overview.total_contributions)}</span> |
+				<span class="nowrap text-muted">Individuals: {formatter.format(overview.total_from_individuals)}</span> |
+				<span class="nowrap text-muted">PACs: {formatter.format(overview.total_from_pacs)}</span>
+			</p>
+
+			{#if committee}
+			<h5 class="jumotron-heading">{committee.name} {#if committee.display_type}({committee.display_type}){/if}</h5>
+			<p>
+				<span class="nowrap text-muted">Total: {formatter.format(committee.total_contributions)}</span> |
+				<span class="nowrap text-muted">Individuals: {formatter.format(committee.total_from_individuals)}</span> |
+				<span class="nowrap text-muted">PACs: {formatter.format(committee.total_from_pacs)}</span>
+			</p>
+			{#if committee.treasurer}
+			<p>Treasurer: {committee.treasurer}</p>
+			{/if} {/if} {/if}
+		</div>
+	</section>
+
+  {#if lobbyists || expendatures}
+	<div class="py-5 bg-light">
+		<div class="container">
+			{#if lobbyists && lobbyists.length > 0}
+			<div class="row">
+				<div class="col-12">
+					<h2>Lobbyists</h2>
+					<hr />
+				</div>
+			</div>
+			<div class="row mb-2">
+				<div class="col-12">
+					{#each lobbyists as lobbyist}
+					<p>{lobbyist.bundler_organization_name} ({lobbyist.cycle}) <strong class="text-muted">|</strong>
+						{formatter.format(lobbyist.bundled_amount)}</p>
+					{/each}
+				</div>
+			</div>
+			{/if} {#if expendatures && (expendatures.support.length > 0 || expendatures.oppose.length > 0)}
+			<div class="row">
+				<div class="col-12">
+					<h2>Expendatures</h2>
+					<hr />
+				</div>
+			</div>
+
+			<div class="row">
+				{#if expendatures.support.length > 0}
+				<div class="col-md-6">
+					<h3>Support</h3>
+					{#each expendatures.support as expendature}
+					<p>{expendature.purpose} <strong class="text-muted">|</strong> {expendature.payee} <strong class="text-muted">|</strong>
+						{formatter.format(expendature.amount)}</p>
+					{/each}
+				</div>
+				{/if} {#if expendatures.oppose.length > 0}
+
+				<div class="col-md-6">
+					<h3>Oppose</h3>
+					{#each expendatures.oppose as expendature}
+					<p>{expendature.purpose} <strong class="text-muted">|</strong> {expendature.payee} <strong class="text-muted">|</strong>
+						{formatter.format(expendature.amount)}</p>
+					{/each}
+				</div>
+				{/if}
+			</div>
+			{/if}
+		</div>
+	</div>
+  {/if}
+
+</main>
+
+<script>
+  import client from "../client";
+  import { asyncLoad, getCycle, getUrlVars } from "../tools";
+
+  export default {
+    components: {
+      Loader: "../components/Loader.html",
+      LoadingMessage: "../components/LoadingMessage.html"
+    },
+    data() {
+      return {
+        ...getUrlVars(),
+        formatter: new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: 2
+        }),
+        loadingMessage: null,
+        error: null,
+        overview: null,
+        committee: null,
+        lobbyists: null,
+        expendatures: null
+      };
+    },
+    async oncreate() {
+      const { id, cycle } = this.get();
+
+      await asyncLoad(this, [
+        [
+          "Loading Overview...",
+          async () => {
+            const response = await client(
+              `https://api.propublica.org/campaign-finance/v1/${getCycle(
+                cycle
+              )}/candidates/${id}.json`
+            );
+            if (response && response.results && response.results.length > 0) {
+              this.set({
+                overview: response.results[0]
+              });
+
+              if (response.results[0].committee) {
+                const committee = await client(
+                  `https://api.propublica.org/campaign-finance/v1/${getCycle(
+                    cycle
+                  )}${response.results[0].committee}`
+                );
+
+                if (
+                  committee &&
+                  committee.results &&
+                  committee.results.length > 0
+                ) {
+                  this.set({
+                    committee: committee.results[0]
+                  });
+
+                  const lobbyists = await client(
+                    `https://api.propublica.org/campaign-finance/v1/${getCycle(
+                      cycle
+                    )}/committees/${
+                      committee.results[0].id
+                    }/lobbyist_bundlers.json`
+                  );
+
+                  if (
+                    lobbyists &&
+                    lobbyists.results &&
+                    lobbyists.results.length > 0
+                  ) {
+                    console.log(lobbyists.results);
+                    this.set({
+                      lobbyists: lobbyists.results.sort((a, b) => b.cycle - a.cycle)
+                    });
+                  }
+                }
+              }
+            }
+          }
+        ],
+        [
+          "Loading Expendatures...",
+          async () => {
+            const expendatures = await client(
+              `https://api.propublica.org/campaign-finance/v1/${getCycle(
+                cycle
+              )}/candidates/${id}/independent_expenditures.json`
+            );
+            if (
+              expendatures &&
+              expendatures.results &&
+              expendatures.results.length > 0
+            ) {
+              const filtered = expendatures.results.reduce(
+                (p, c) => {
+                  if (c.support_or_oppose === "S") {
+                    p.support.push(c);
+                  } else {
+                    p.oppose.push(c);
+                  }
+
+                  return p;
+                },
+                { support: [], oppose: [] }
+              );
+
+              this.set({
+                expendatures: filtered
+              });
+            }
+          }
+        ]
+      ]);
+    }
+  };
+</script>

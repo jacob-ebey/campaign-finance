@@ -1,0 +1,177 @@
+<main role="main">
+
+	<LoadingMessage message={loadingMessage} />
+
+	<section class="jumbotron text-center">
+		<div class="container">
+			{#if !overview}
+			<Loader /> {/if} {#if overview}
+			<h1 class="jumbotron-heading">
+				{#if overview.first_name}{overview.first_name} {/if} {#if overview.middle_name}{overview.middle_name} {/if} {#if overview.last_name}{overview.last_name}
+				{/if} ({overview.current_party})
+			</h1>
+			<h4 class="text-muted">
+				Born: {formatYYYYMMDD(overview.date_of_birth)}
+			</h4>
+      {#if overview.url}
+      <a href={overview.url}>{overview.url}</a>
+      {/if}
+			<p>
+				{#if overview.twitter_account}
+				<span class="nowrap text-muted">
+					Twitter <a href={`https://twitter.com/${overview.twitter_account}`}>@{overview.twitter_account}</a>
+				</span>
+				{/if} {#if overview.facebook_account}
+				<span class="nowrap text-muted">
+					Facebook <a href={`https://facebook.com/${overview.facebook_account}`}>@{overview.facebook_account}</a>
+				</span>
+				{/if} {#if overview.youtube_account}
+				<span class="nowrap text-muted">
+					YouTube <a href={`https://youtube.com/${overview.youtube_account}`}>@{overview.youtube_account}</a>
+				</span>
+				{/if}
+			</p>
+      {/if}
+		</div>
+	</section>
+
+	{#if overview && overview.roles && overview.roles.length > 0}
+	<div class="py-5 bg-light">
+		<div class="container">
+			<div class="row">
+				<div class="col-12">
+					<h2>Roles</h2>
+					<hr />
+				
+					{#each overview.roles as role}
+          {#if role.fec_candidate_id}
+          <p>
+            <a href={`/finances?id=${role.fec_candidate_id}`}>{role.title} {role.congress} {role.chamber} ({role.party} - {role.state})</a>
+          </p>
+          {:else}
+					<p>{role.title} {role.congress} {role.chamber} ({role.party} - {role.state})</p>
+          {/if}
+					{/each}
+				</div>
+			</div>
+		</div>
+	</div>
+	{/if}
+
+</main>
+
+<script>
+  import client from "../client";
+  import { asyncLoad, getCycle, getUrlVars, formatYYYYMMDD } from "../tools";
+
+  export default {
+    components: {
+      Loader: "../components/Loader.html",
+      LoadingMessage: "../components/LoadingMessage.html"
+    },
+    data() {
+      return {
+        ...getUrlVars(),
+        formatYYYYMMDD,
+        formatter: new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: 2
+        }),
+        loadingMessage: null,
+        overview: null,
+        committee: null,
+        lobbyists: null,
+        expendatures: null
+      };
+    },
+    async oncreate() {
+      const { id, cycle } = this.get();
+
+      await asyncLoad(this, [
+        [
+          "Loading Finances...",
+          async () => {
+            const response = await client(
+              `https://api.propublica.org/congress/v1/members/${id}.json`
+            );
+            if (response && response.results && response.results.length > 0) {
+              this.set({
+                overview: response.results[0]
+              });
+
+              if (response.results[0].committee) {
+                const committee = await client(
+                  `https://api.propublica.org/campaign-finance/v1/${getCycle(
+                    cycle
+                  )}${response.results[0].committee}`
+                );
+
+                if (
+                  committee &&
+                  committee.results &&
+                  committee.results.length > 0
+                ) {
+                  this.set({
+                    committee: committee.results[0]
+                  });
+
+                  const lobbyists = await client(
+                    `https://api.propublica.org/campaign-finance/v1/${getCycle(
+                      cycle
+                    )}/committees/${
+                      committee.results[0].id
+                    }/lobbyist_bundlers.json`
+                  );
+
+                  if (
+                    lobbyists &&
+                    lobbyists.results &&
+                    lobbyists.results.length > 0
+                  ) {
+                    console.log(lobbyists.results);
+                    this.set({
+                      lobbyists: lobbyists.results.sort((a, b) => b.cycle - a.cycle)
+                    });
+                  }
+                }
+              }
+            }
+          }
+        ],
+        [
+          "Loading Expendatures...",
+          async () => {
+            const expendatures = await client(
+              `https://api.propublica.org/campaign-finance/v1/${getCycle(
+                cycle
+              )}/candidates/${id}/independent_expenditures.json`
+            );
+            if (
+              expendatures &&
+              expendatures.results &&
+              expendatures.results.length > 0
+            ) {
+              const filtered = expendatures.results.reduce(
+                (p, c) => {
+                  if (c.support_or_oppose === "S") {
+                    p.support.push(c);
+                  } else {
+                    p.oppose.push(c);
+                  }
+
+                  return p;
+                },
+                { support: [], oppose: [] }
+              );
+
+              this.set({
+                expendatures: filtered
+              });
+            }
+          }
+        ]
+      ]);
+    }
+  };
+</script>
