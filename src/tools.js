@@ -37,8 +37,9 @@ export function asyncLoad(self, tasks) {
         const check = () => {
             let found = false;
             for (let i = 0; i < promises.length; i++) {
+                const index = i;
                 if (!promises[0].done) {
-                    self.set({ loadingMessage: labels[i] });
+                    self.set({ loadingMessage: labels[index] });
                     found = true;
                     break;
                 }
